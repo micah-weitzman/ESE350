@@ -1,4 +1,4 @@
-/*
+/*/*
  * uart_test.c
  *
  * Created: 1/2/2019 9:53:33 AM
@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 #define F_CPU 16000000UL
 #define BAUDRATE 9600
 #define BAUD_PRESCALLER (((F_CPU / (BAUDRATE * 16UL))) - 1)
@@ -21,7 +20,7 @@ void USART_init(void);
 void USART_send( unsigned char data);
 void USART_putstring(char* StringPtr);
 
-char String[10] = "";
+char String[15] = "";
 
 
 void USART_init(void){
@@ -56,18 +55,20 @@ void USART_putstring(char* StringPtr){
 #include <stdio.h>
 #include <stdlib.h>
 
-unsigned int DelayHi = 1500; // high time of the pulses to be created
+unsigned int DelayHi = 37000; // high time of the pulses to be created
 unsigned int DelayLo = 20; // low time of the pulses to be created
 int pcnt; // pulse count
 char HiorLo; // flag to choose
 
-unsigned int riseTime, fallTime, diff, overflows;
-long pulse_width;
+volatile unsigned int riseTime, fallTime, diff;
+volatile char i = 0; 
 
 ISR (TIMER1_COMPA_vect){
 	if(HiorLo){
 		OCR1A += DelayHi;
 		HiorLo = 0;
+		TCCR1B |= (1 << ICES1); 
+		TIMSK1 |= (1 << ICIE1); 
 		
 	} else {
 		OCR1A += DelayLo;
@@ -76,8 +77,20 @@ ISR (TIMER1_COMPA_vect){
 	
 }
 
-ISR(TIMER1_OVF_vect) {
-	overflows++; 
+ISR(TIMER1_CAPT_vect) {
+	if (i) {
+		fallTime = ICR1;
+		
+		diff = (fallTime - riseTime) / 2.0;
+				sprintf(String, "%u \n", diff);
+				USART_putstring(String);
+		i = 0;
+	} else {
+		riseTime = ICR1;
+		i = 1;
+	}
+	
+	TCCR1B ^= (1 << ICES1); // toggle to look for opposite edge
 }
 
 
@@ -91,8 +104,9 @@ int main(void)
 	OCR1A += DelayHi; // start the second OC1 operation
 	HiorLo = 0; // next time use DelayLo as delay count of OC0 operation
 	TIMSK1 |= 0x02; // enable interrupt for OC1A
-	TIMSK1 |= (1 << ICIE1);
+	TIMSK1 |= (1 << ICIE1) | (1 << TOIE1);
 	sei(); // enable interrupts
 	while (1) {
+
 	}
 }
