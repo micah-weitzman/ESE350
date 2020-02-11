@@ -12,10 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-unsigned int risSig;
-unsigned int dist;
-unsigned int halfperiod = 7; // half of count to 16 w/ prescaler
-
 
 #define F_CPU 16000000UL
 #define BAUDRATE 9600
@@ -55,54 +51,48 @@ void USART_putstring(char* StringPtr){
 	
 }
 
-void timer1_init() {
-	TCCR1B |= (1 << ICES1); // input capture for ICP1 (PB0)
-	TCCR1B |= (1 << CS12); // set 256 prescaler
-	TCNT1 = 0;
-}
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-ISR(TIMER1_COMPA_vect) {
-	OCR0A += halfperiod;
-	PORTB &= (0 << PINB1);
-	
-	DDRB |= (0 << PINB1);
-	TCCR1B |= (1 << ICES1);
-}
+unsigned int DelayHi = 1500; // high time of the pulses to be created
+unsigned int DelayLo = 20; // low time of the pulses to be created
+int pcnt; // pulse count
+char HiorLo; // flag to choose
 
-ISR(TIMER1_CAPT_vect) {
-	if (6 >> TCCR1B) {
-		risSig = ICR1;
+unsigned int riseTime, fallTime, diff, overflows;
+long pulse_width;
+
+ISR (TIMER1_COMPA_vect){
+	if(HiorLo){
+		OCR1A += DelayHi;
+		HiorLo = 0;
+		
 	} else {
-		dist = ICR1 - risSig;
+		OCR1A += DelayLo;
+		HiorLo = 1;
 	}
 	
-	TCCR1B ^= (1 << ICES1);
 }
+
+ISR(TIMER1_OVF_vect) {
+	overflows++; 
+}
+
 
 int main(void)
 {
-	DDRB |= (1 << 1); // set PB1 to output
-	PORTB |= (1 << PINB1);
-	
-	timer1_init();
-
-
-	OCR0A = TCNT1 + halfperiod;
-
 	USART_init();
-
-	sei();
-    while (1)
-	{
-
-		sprintf(String,"%d \n", dist); // Print to terminal (converts a number into a string)
-		USART_putstring(String);
-
+	DDRB |= 0x02; // set Port B pin 1 to output
+	TCCR1A = 0x40; // enable output compare on OC1A to toggle on compare
+	TCCR1B = 0x02; // set prescalar to 8 for channel 0 (2MHz)
+	OCR1A = TCNT1 + 16; // pull PB1 pin high quickly
+	OCR1A += DelayHi; // start the second OC1 operation
+	HiorLo = 0; // next time use DelayLo as delay count of OC0 operation
+	TIMSK1 |= 0x02; // enable interrupt for OC1A
+	TIMSK1 |= (1 << ICIE1);
+	sei(); // enable interrupts
+	while (1) {
 	}
 }
-
-
-
-	
-	
-
