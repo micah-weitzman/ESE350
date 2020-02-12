@@ -57,69 +57,44 @@ void USART_putstring(char* StringPtr){
 
 unsigned int DelayHi = 37000; // high time of the pulses to be created
 unsigned int DelayLo = 20; // low time of the pulses to be created
-int pcnt; // pulse count
 char HiorLo; // flag to choose
 
 volatile unsigned int riseTime, fallTime, diff;
 volatile char i = 0; 
 
-ISR (TIMER1_COMPA_vect){
-	if(HiorLo){
-		OCR1A += DelayHi;
-		HiorLo = 0;
-		TCCR1B |= (1 << ICES1); 
-		TIMSK1 |= (1 << ICIE1); 
-		
-	} else {
-		OCR1A += DelayLo;
-		HiorLo = 1;
-	}
-	
-}
-
-ISR(TIMER1_CAPT_vect) {
-	if (i) {
-		fallTime = ICR1;
-		
-		diff = (fallTime - riseTime) / 2.0;
-
-if (diff > 8000) {
-	OCR0A = 238;
-	} else if (diff > 7000) {
-	OCR0A = 212;
-	} else if (diff > 6000) {
-	OCR0A = 189;
-	} else if (diff > 5000) {
-	OCR0A = 178;
-	} else if (diff > 4000) {
-	OCR0A = 159;
-	} else if (diff > 3000) {
-	OCR0A = 141;
-	} else if (diff > 2000) {
-	OCR0A = 126;
-	} else {
-	OCR0A =  118;
-}
-		i = 0;
-	} else {
-		riseTime = ICR1;
-		i = 1;
-	}
-	
-	TCCR1B ^= (1 << ICES1); // toggle to look for opposite edge
-}
-
-ISR (TIMER0_COMPA_vect) {
-	
-}
-
 void timer0_set() {
-	TCCR0A |= (1 << COM0A0) | (1 << WGM01); //fast PWM CTC mode 
-	TCCR0B |= (1 << WGM01) | (1 << CS01) | (1 << CS00); // set 64 prescale clock
-	TIMSK0 |= (1 << OCIE0A);
-	OCR0A = TCNT0 + 12; 
+	TCCR0A |= 0x40;
+	TCCR0A |= 0x02;
+	DDRD |= 0x40;
+	TCCR0B |= 0x03;
 }
 
+void contFreq() {
+	if (diff) {
+		OCR0A = (int) (0.011 * (float)(diff + 1025.14));
+	}
+}
+
+void discFreq() {
+	if (diff > 7000) {
+		OCR0A = 238 / 2;
+		} else if (diff > 6000) {
+		OCR0A = 212 / 2;
+		} else if (diff > 5000) {
+		OCR0A = 189 / 2;
+		} else if (diff > 4000) {
+		OCR0A = 178 / 2;
+		} else if (diff > 3000) {
+		OCR0A = 159 / 2;
+		} else if (diff > 2000) {
+		OCR0A = 141 / 2;
+		} else if (diff > 1000) {
+		OCR0A = 126 / 2;
+		} else {
+		OCR0A = 118 / 2;
+	}
+
+}
 
 int main(void)
 {
@@ -139,6 +114,38 @@ int main(void)
 	
 	sei(); // enable interrupts
 	while (1) {
-		
+			discFreq(); 
 	}
 }
+
+
+
+ISR (TIMER1_COMPA_vect){
+	if(HiorLo){
+		OCR1A += DelayHi;
+		HiorLo = 0;
+		TCCR1B |= (1 << ICES1);
+		TIMSK1 |= (1 << ICIE1);
+		
+		} else {
+		OCR1A += DelayLo;
+		HiorLo = 1;
+	}
+	
+}
+
+ISR(TIMER1_CAPT_vect) {
+	if (i) {
+		fallTime = ICR1;
+		
+		diff = (fallTime - riseTime) / 2.0;
+
+		i = 0;
+	} else {
+		riseTime = ICR1;
+		i = 1;
+	}
+	
+	TCCR1B ^= (1 << ICES1); // toggle to look for opposite edge
+}
+
