@@ -69,6 +69,21 @@ void timer0_set() {
 	TCCR0B |= 0x03;
 }
 
+void analog_init() {
+	ADMUX |= (1 << REFS0); 
+	ADMUX &= ~(1 << REFS1); 
+	ADCSRA |= (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0); 
+}
+
+uint16_t adc_read(uint8_t ch) {
+	ch &= 0b00000111; 
+	ADMUX = (ADMUX & 0xF8) | ch;
+	
+	ADCSRA |= (1 << ADSC); 
+	//while(ADCSRA & (1 << ADSC)); 
+	return  (ADC); 
+}
+
 void contFreq() {
 	if (diff) {
 		OCR0A = (int) (0.011 * (float)(diff + 1025.14));
@@ -104,7 +119,8 @@ void discFreq() {
 int main(void)
 {
 	USART_init();
-
+	
+	DDRB |= (1 << PINB4) | (1 << PINB3) | (1 << PINB2); 
 	DDRB |= 0x02; // set Port B pin 1 to output
 	DDRD |= (1 << PIND6); // set pin D6 to out
 	TCCR1A = 0x40; // enable output compare on OC1A to toggle on compare
@@ -115,35 +131,20 @@ int main(void)
 	TIMSK1 |= 0x02; // enable interrupt for OC1A
 	TIMSK1 |= (1 << ICIE1) | (1 << TOIE1);
 	timer0_set(); 
+	analog_init(); 
 	
 	volatile int cvsf = 1; // controls cont vs discrete
 	//volatile int pressed = 0; 
 	volatile int pressed = 1;
 
 	int tmp = cvsf; 
+	uint16_t adc_res; 
 	
 	sei(); // enable interrupts
 	while (1) {
 		
-		sprintf(String, "%i\n", tmp); 
-		USART_putstring(String); 
-
-		/*if (!(PIND & (1 << PIND7))) {
-			if (pressed == 0) {
-				pressed = 1;
-				tmp = cvsf - 1; 
-				//while (!(PIND & (1 << PIND7)));
-			}
-		} else {
-			pressed = 0; 
-			tmp = cvsf; 	
-		}
-		
-		if (tmp) {
-			if (diff) {discFreq(); }
-		} else {
-			if (diff) {contFreq(); }
-		}*/
+		//sprintf(String, "%i\n", tmp); 
+		//USART_putstring(String); 
 		
 		if (PIND & (1 << PIND7)) {
 			if (pressed == 1) {
@@ -161,7 +162,39 @@ int main(void)
 			if (diff) {discFreq();}
 		}
 			
+		adc_res = adc_read(0);
 		
+		PORTB |= (1 << PINB2);
+		
+		
+		if (adc_res > 880) {
+			PORTB |= (1 << PINB4) | (1 << PINB3) | (1 << PINB2); 
+		} else if (adc_res > 867) {
+			PORTB |= (1 << PINB4) | (1 << PINB3); 
+			PORTB &= ~(1 << PINB2); 
+		} else if (adc_res > 815) {
+			PORTB |= (1 << PINB4); 
+			PORTB &= ~(1 << PINB3);
+			PORTB &= ~(1 << PINB2);  
+		} else if (adc_res > 762) {
+			PORTB &= ~(1 << PINB3);
+			PORTB |= (1 << PINB4) | (1 << PINB2); 
+		} else if (adc_res > 710) {
+			PORTB |= (1 << PINB2) | (1 << PINB3);
+			PORTB &= ~(1 << PINB4); 
+		} else if (adc_res > 657) {
+			PORTB |= (1 << PINB3);
+			PORTB &= ~(1 << PINB4); 
+			PORTB &= ~(1 << PINB2); 
+		} else if (adc_res > 604) {
+			PORTB |= (1 << PINB2); 
+			PORTB &= ~(1 << PINB4); 
+			PORTB &= ~(1 << PINB3); 
+		} else {
+			PORTB &= ~(1 << PINB2); 
+			PORTB &= ~(1 << PINB4); 
+			PORTB &= ~(1 << PINB3); 
+		}
 	} 
 	
 }
