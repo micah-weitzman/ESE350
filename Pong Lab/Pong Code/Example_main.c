@@ -89,8 +89,8 @@ int main(void)
 	while (1)
 	{	
 		checkInput();
-  	checkCollisions(); 
-  	update();          
+  		checkCollisions(); 
+  		update();          
  		draw();
 	}
 }
