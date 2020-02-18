@@ -365,114 +365,114 @@ const uint8_t font[] PROGMEM = {
 	0xC, 0x2, 0xFF, 0x80, 0x80,
 	0x0, 0xF8, 0x80, 0x80, 0x78,
 	0x0, 0x98, 0xB8, 0xE8, 0x48,
-    0x0, 0x3C, 0x3C, 0x3C, 0x3C,};
+0x0, 0x3C, 0x3C, 0x3C, 0x3C,};
 
 //lcd clear screen function
 void clear_screen(void) {
-  uint8_t p, c;
-  
-  for(p = 0; p < 8; p++) {
-    
-    lcd_command(CMD_SET_PAGE | p);
-    for(c = 0; c < 129; c++) {
-      lcd_command(CMD_SET_COLUMN_LOWER | (c & 0xf));
-      lcd_command(CMD_SET_COLUMN_UPPER | ((c >> 4) & 0xf));
-      lcd_data(0x0);
-    }     
-  }
+	uint8_t p, c;
+	
+	for(p = 0; p < 8; p++) {
+		
+		lcd_command(CMD_SET_PAGE | p);
+		for(c = 0; c < 129; c++) {
+			lcd_command(CMD_SET_COLUMN_LOWER | (c & 0xf));
+			lcd_command(CMD_SET_COLUMN_UPPER | ((c >> 4) & 0xf));
+			lcd_data(0x0);
+		}
+	}
 }
 
 
 //lcd initialization function
 void lcd_init(void) {
-  // set pin directions
-  SID_DDR |= _BV(SID);
-  SCLK_DDR |= _BV(SCLK);
-  A0_DDR |= _BV(A0);
-  RST_DDR |= _BV(RST);
-  CS_DDR |= _BV(CS);
-  
-  // toggle RST low to reset; CS low so it'll listen to us
-  CS_PORT &= ~_BV(CS);
-  RST_PORT &= ~_BV(RST);
-  _delay_ms(500);
-  RST_PORT |= _BV(RST);
+	// set pin directions
+	SID_DDR |= _BV(SID);
+	SCLK_DDR |= _BV(SCLK);
+	A0_DDR |= _BV(A0);
+	RST_DDR |= _BV(RST);
+	CS_DDR |= _BV(CS);
+	
+	// toggle RST low to reset; CS low so it'll listen to us
+	CS_PORT &= ~_BV(CS);
+	RST_PORT &= ~_BV(RST);
+	_delay_ms(500);
+	RST_PORT |= _BV(RST);
 
-  // LCD bias select
-  lcd_command(CMD_SET_BIAS_7);
-  // ADC select
-  lcd_command(CMD_SET_ADC_NORMAL);
-  // SHL select
-  lcd_command(CMD_SET_COM_NORMAL);
-  // Initial display line
-  lcd_command(CMD_SET_DISP_START_LINE);
+	// LCD bias select
+	lcd_command(CMD_SET_BIAS_7);
+	// ADC select
+	lcd_command(CMD_SET_ADC_NORMAL);
+	// SHL select
+	lcd_command(CMD_SET_COM_NORMAL);
+	// Initial display line
+	lcd_command(CMD_SET_DISP_START_LINE);
 
-  // turn on voltage converter (VC=1, VR=0, VF=0)
-  lcd_command(CMD_SET_POWER_CONTROL | 0x4);
-  // wait for 50% rising
-  _delay_ms(50);
+	// turn on voltage converter (VC=1, VR=0, VF=0)
+	lcd_command(CMD_SET_POWER_CONTROL | 0x4);
+	// wait for 50% rising
+	_delay_ms(50);
 
-  // turn on voltage regulator (VC=1, VR=1, VF=0)
-  lcd_command(CMD_SET_POWER_CONTROL | 0x6);
-  // wait >=50ms
-  _delay_ms(50);
+	// turn on voltage regulator (VC=1, VR=1, VF=0)
+	lcd_command(CMD_SET_POWER_CONTROL | 0x6);
+	// wait >=50ms
+	_delay_ms(50);
 
-  // turn on voltage follower (VC=1, VR=1, VF=1)
-  lcd_command(CMD_SET_POWER_CONTROL | 0x7);
-  // wait
-  _delay_ms(10);
+	// turn on voltage follower (VC=1, VR=1, VF=1)
+	lcd_command(CMD_SET_POWER_CONTROL | 0x7);
+	// wait
+	_delay_ms(10);
 
-  // set lcd operating voltage (regulator resistor, ref voltage resistor)
-  lcd_command(CMD_SET_RESISTOR_RATIO | 0x6);
+	// set lcd operating voltage (regulator resistor, ref voltage resistor)
+	lcd_command(CMD_SET_RESISTOR_RATIO | 0x6);
 
 }
 
 inline void spiwrite(uint8_t c) {
-  int8_t i;
-  for (i=7; i>=0; i--) {
-    SCLK_PORT &= ~_BV(SCLK);
-    if (c & _BV(i))
-      SID_PORT |= _BV(SID);
-    else
-      SID_PORT &= ~_BV(SID);
-    SCLK_PORT |= _BV(SCLK);
-  }
+	int8_t i;
+	for (i=7; i>=0; i--) {
+		SCLK_PORT &= ~_BV(SCLK);
+		if (c & _BV(i))
+		SID_PORT |= _BV(SID);
+		else
+		SID_PORT &= ~_BV(SID);
+		SCLK_PORT |= _BV(SCLK);
+	}
 
- 
+	
 }
 void lcd_command(uint8_t c) {
-  A0_PORT &= ~_BV(A0);
+	A0_PORT &= ~_BV(A0);
 
-  spiwrite(c);
+	spiwrite(c);
 }
 
 void lcd_data(uint8_t c) {
-  A0_PORT |= _BV(A0);
+	A0_PORT |= _BV(A0);
 
-  spiwrite(c);
+	spiwrite(c);
 }
 void lcd_set_brightness(uint8_t val) {
-    lcd_command(CMD_SET_VOLUME_FIRST);
-    lcd_command(CMD_SET_VOLUME_SECOND | (val & 0x3f));
+	lcd_command(CMD_SET_VOLUME_FIRST);
+	lcd_command(CMD_SET_VOLUME_SECOND | (val & 0x3f));
 }
 
 //write to the lcd buffer
 void write_buffer(uint8_t *buff) {
-  uint8_t c, p;
+	uint8_t c, p;
 
-  for(p = 0; p < 8; p++) {
-    
-    lcd_command(CMD_SET_PAGE | pagemap[p]);
-    lcd_command(CMD_SET_COLUMN_LOWER | (0x0 & 0xf));
-    lcd_command(CMD_SET_COLUMN_UPPER | ((0x0 >> 4) & 0xf));
-    lcd_command(CMD_RMW);
-    lcd_data(0xff);
-    
-    
-    for(c = 0; c < 128; c++) {
-      lcd_data(buff[(128*p)+c]);
-    }
-  }
+	for(p = 0; p < 8; p++) {
+		
+		lcd_command(CMD_SET_PAGE | pagemap[p]);
+		lcd_command(CMD_SET_COLUMN_LOWER | (0x0 & 0xf));
+		lcd_command(CMD_SET_COLUMN_UPPER | ((0x0 >> 4) & 0xf));
+		lcd_command(CMD_RMW);
+		lcd_data(0xff);
+		
+		
+		for(c = 0; c < 128; c++) {
+			lcd_data(buff[(128*p)+c]);
+		}
+	}
 }
 
 // function to clear everything in the buffer
@@ -496,40 +496,46 @@ void drawchar(uint8_t *buff, uint8_t x, uint8_t line, uint8_t c) {
 
 // the most basic function, set a single pixel
 void setpixel(uint8_t *buff, uint8_t x, uint8_t y, uint8_t color) {
-	buff[x + (y*128)] = color; 
+	if (color == 0) {
+		clearpixel(buff, x, y);
+		} else {
+		buff[x + (y/8*128) - 1] |= (1 << (7-(y % 8)));
+	}
 }
 
 // function to clear a single pixel
 void clearpixel(uint8_t *buff, uint8_t x, uint8_t y) {
-	setpixel(buff, x, y, 0x00); 
+	buff[x + (y/8*128) - 1] &= ~(1 << (7-(y % 8)));
 }
 
 // function to write a string on the lcd
 void drawstring(uint8_t *buff, uint8_t x, uint8_t line, uint8_t *c) {
-	while (c != '\0') {
-		drawchar(buff, x, line, c);
-		c++; 
+	int i = 0;
+	while (*c != '\0') {
+		drawchar(buff, x + i*6, line, *c);
+		c++;
+		i++;
 	}
 }
 
 // use bresenham's algorithm to write this function to draw a line
 void drawline(uint8_t *buff,uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1,uint8_t color) {
-	uint8_t dx = x1 - x0;
-	uint8_t dy = y1 - y0; 
-	float derr =  abs(((float)dy)/((float)dx)); 
-	float err = 0.0; 
+	float dx = x1 - x0 + 0.0;
+	float dy = y1 - y0 + 0.0;
+	float derr =  (float)abs(((float)dy)/((float)dx));
+	float err = 0.0;
 	if (dx == 0) {
-		uint8_t x = x0; 
+		uint8_t x = x0;
 		for (uint8_t y = y0; y <= y1; y++) {
-			setpixel(buff, x, y, color); 
+			setpixel(buff, x, y, color);
 		}
-	} else if (dy == 0) {
-		uint8_t y = y0; 
-		for (uint8_t x = x0; x < x1; x++) {
-			setpixel(buff, x, y, color)
+		} else if (dy == 0) {
+		uint8_t y = y0;
+		for (uint8_t x = x0; x <= x1; x++) {
+			setpixel(buff, x, y, color);
 		}
-	} else {
-		uint8_t y = y0; 
+		} else {
+		uint8_t y = y0;
 		for(uint8_t x = x0; x <= x1; x++) {
 			setpixel(buff, x, y, color);
 			err += derr;
@@ -555,53 +561,68 @@ void fillrect(uint8_t *buff,uint8_t x, uint8_t y, uint8_t w, uint8_t h,uint8_t c
 
 // function to draw a rectangle
 void drawrect(uint8_t *buff,uint8_t x, uint8_t y, uint8_t w, uint8_t h,uint8_t color) {
-	drawline(buff, x, y, x+w, y, color); // top line 
+	drawline(buff, x, y, x+w, y, color); // top line
 	drawline(buff, x+w, y + 1, x+w, y+h, color); // right line
 	drawline(buff, x, y+h, x+w-1, y+h, color); // bottom line
-	drawline(buff, x, y+1, x, y+h-1, color); 
+	drawline(buff, x, y+1, x, y+h-1, color);
 }
 
 
+void dC(uint8_t *buff, uint8_t x0, uint8_t y0, int x, int y, uint8_t color) {
+	setpixel(buff, x0+x, y0+y, color);
+	setpixel(buff, x0-x, y0+y, color);
+	setpixel(buff, x0+x, y0-y, color);
+	setpixel(buff, x0-x, y0-y, color);
+	setpixel(buff, x0+y, y0+x, color);
+	setpixel(buff, x0-y, y0+x, color);
+	setpixel(buff, x0+y, y0-x, color);
+	setpixel(buff, x0-y, y0-x, color);
+}
+
 // function to draw a circle
 void drawcircle(uint8_t *buff,uint8_t x0, uint8_t y0, uint8_t r,uint8_t color) {
-	uint8_t x = r; 
-	uint8_t y = 0;
-	setpixel(buff, x0, y0+r, color); 
-	setpixel(buff,x0, y0-r, color); 
-	setpixel(buff, x0-r, y0, color); 
-	setpixel(buff, x0+r, y0, color); 
-	
-	uint8_t p = 1 - r;
-	while (x > y) {
-		y++;
-		if(p <= 0) {
-			p += 2*y +1; 
-		} else {
-			x--;
-			p += 2*y - 2x + 1;
-		}
+	int x = 0;
+	int y = r;
+	dC(buff, x0, y0, x, y, color);
+	int d = 3 - 2*r;
+	while (y >= x) {
+		x++;
 		
-		if (x < y) {
-			break; 
+		if(d > 0) {
+			y--;
+			d = d + 4 * (x - y) + 5;
+			} else {
+			d = d + 4*x; // was + 6
 		}
-		
-		setpixel(buff, x+x0, y+y0, color);
-		setpixel(buff, -x+x0, y+y0, color);
-		setpixel(buff, x+x0, -y+y0, color); 
-		setpixel(buff, -x+x0, -y+y0, color); 
-		
-		if (x != y) {
-			setpixel(buff, y+x0, x+y0, color); 
-			setpixel(buff, -y+x0, x+y0, color); 
-			setpixel(buff, y+x0, -x+y0, color); 
-			setpixel(buff, -y+x0, -x+y0, color); 
-		}
+		dC(buff, x0, y0, x, y, color);
 	}
 }
 
 
+
+void fC(uint8_t *buff, uint8_t x0, uint8_t y0, uint8_t x, uint8_t y, uint8_t color) {
+	drawline(buff, x0-x, y0+y, x0+x, y0+y, color);
+	drawline(buff, x0-x, y0-y, x0+x, y0-y, color);
+	drawline(buff, x0-y, y0+x, x0+y, y0+x, color);
+	drawline(buff, x0-y, y0-x, x0+y, y0-x, color);
+}
+
 // function to draw a filled circle
 void fillcircle(uint8_t *buff,uint8_t x0, uint8_t y0, uint8_t r,uint8_t color) {
-	
+	uint8_t x = 0;
+	uint8_t y = r;
+	fC(buff, x0, y0, x, y, color);
+	int d = 3 - 2*r;
+	while (y >= x) {
+		x++;
+		
+		if(d > 0) {
+			y--;
+			d = d +4 * (x - y) + 5;
+			} else {
+			d = d + 4*x + 0; // was + 6
+		}
+		fC(buff, x0, y0, x, y, color);
+	}
 }
 
