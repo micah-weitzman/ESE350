@@ -21,9 +21,6 @@ void analogSetUp() {
 	ADCSRA |= (1 << ADEN); // Enable ADC
 	ADCSRA |= (1 << ADPS1); //| (1<< ADPS2) | (1 << ADPS0); // set to 4 clock division factor 
 	//ADCSRA |= (1 << ADIE); // enabe interrupts 
-	DDRC &= ~(1 << PINC1); 
-	DDRC |= (1 << PINC0); 
-	PORTC |= (1 << PINC0); 
 }
 
 
@@ -32,21 +29,29 @@ uint16_t  adc_read(uint8_t ch) {
 	ADMUX = (ADMUX & 0xF8)|ch;
 	
 	ADCSRA |= (1<<ADSC); 
-
+	while(ADCSRA & (1<<ADSC));
 	return(ADC);
 	
 }
 
 uint16_t readTouchX() {
 	// Start by readying diff between y values to find x 
-	DDRC |= (1 << PINC1) | (1 << PINC3); // set X- and X+ to output
-	DDRC &= ~(1 << PINC0); 
-	DDRC &= ~(1 << PINC2); // set Y- and Y+ to input 
-	PORTC |= (1 << PINC3); 
-	PORTC &= ~(1 << PINC1) & ~(1 << PINC0) & ~(1 << PINC2); 
-	uint16_t x = adc_read(0); 
-	PORTC &= ~(1 << PINC3); 
-	return x; 
+	DDRC |= (1 << PINC1)| (1 << PINC3); // set X- and X+ to output
+	DDRC &= ~(1 << PINC0) & ~(1 << PINC2); // set Y- and Y+ to input 
+	PORTC |= (1 << PINC1); 
+	PORTC &= ~(1 << PINC3); // & ~(1 << PINC0); //& ~(1 << PINC2); 
+	_delay_ms(50); 
+	uint16_t x = adc_read(2) * 0.25; 
+	PORTC &= ~(1 << PINC1); 
+	if (x == 0) {
+		return 0; 
+	} else if (x - 37 > 128) {
+		return 128;
+	} else if (x > 30) {
+		return x - 37; 
+	} else {
+		return 0; 
+	}
 }
 
 uint16_t readTouchY() {
@@ -54,8 +59,17 @@ uint16_t readTouchY() {
 	DDRC |= (1 << PINC0) | (1 << PINC2); // set Y- and Y+ to output
 	DDRC &= ~(1 << PINC1) & ~(1 << PINC3); // set Y- and Y+ to input
 	PORTC |= (1 << PINC0);
-	PORTC &= ~(1 << PINC1) & ~(1 << PINC3) & ~(1 << PINC2); 
-	return adc_read(3);
+	PORTC &= ~(1 << PINC2); // & ~(1 << PINC3);  ~(1 << PINC1) 
+	_delay_ms(50); 
+	uint16_t tmpY = adc_read(3) * 0.1875;
+	PORTC &= ~(1 << PINC0); 
+	if (tmpY > 120|| tmpY < 4) {
+		return 0; 
+	} else if  (tmpY < 130) {
+		return (130 - tmpY) * 0.89;
+	} else {
+		return 0; 
+	}
 }
 
 void detectInput() {
@@ -74,6 +88,8 @@ int main(void)
 	PORTB &= ~0x05;
 	PORTB |= 0x00;
 	
+	analogSetUp(); 
+	
 	//lcd initialisation
 	lcd_init();
 	lcd_command(CMD_DISPLAY_ON);
@@ -81,49 +97,24 @@ int main(void)
 	write_buffer(buff);
 	_delay_ms(1000);
 	clear_buffer(buff);
-	uint8_t st[8] = "pong\0";
 	
-	int x = 30;
-	int y = 30;
-	int dx = 0;
-	int dy = 0;
-	int rad = 5;
+	int x; 
+	int y; 
 	while (1)
 	{
-		analogSetUp();
-		clear_buffer(buff);
+		char String[20];
+		//clear_buffer(buff);
 		lcd_set_brightness(0x18);
-		drawstring(buff,0,0,st);
 		
-		setpixel(buff, 60, 5, 1); 
+		x = readTouchX(); 
+		y = readTouchY();
+
+		sprintf(String, "X=%u, Y=%u", x, y); 
+		//drawstring(buff, 0, 0, String); 
 		
-		drawline(buff, 0, 0, 100, 40, 1); 
+		setpixel(buff, x, y, 1); 
 		
-		drawrect(buff, 12, 12, 100, 20, 1);
-		fillrect(buff, 10, 50, 30, 10, 1);
-		
-		drawcircle(buff, 80, 30, 20, 1);
-		fillcircle(buff, x, y, rad, 1);
 		write_buffer(buff);
-		_delay_ms(100);
-		
-		if (x + rad < 120 && x - rad > 5) {
-			x += dx;
-			} else {
-			dx = -dx;
-			x += dx;
-		}
-		if (y + rad < 60 && y - rad > 5) {
-			y += dy;
-			} else if (y - rad < 0) {
-			dy = -2 * dy;
-			} else {
-			if (dy > 0) {
-				dy = -dy;
-				} else {
-				dy = abs(dy);
-			}
-			y += dy;
-		}
+		//_delay_ms(10);
 	}
 }

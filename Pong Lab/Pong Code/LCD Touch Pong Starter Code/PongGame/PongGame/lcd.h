@@ -58,7 +58,7 @@ void write_buffer(uint8_t *buff);
 void setpixel(uint8_t *buff, uint8_t x, uint8_t y, uint8_t color);
 void clearpixel(uint8_t *buff, uint8_t x, uint8_t y);
 
-void drawstring(uint8_t *buff, uint8_t x, uint8_t line, uint8_t *c);
+void drawstring(uint8_t *buff, uint8_t x, uint8_t line, char *c);
 void drawchar(uint8_t *buff, uint8_t x, uint8_t line, uint8_t c);
 void drawrect(uint8_t *buff,
 uint8_t x, uint8_t y, uint8_t w, uint8_t h,

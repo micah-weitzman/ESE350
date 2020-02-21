@@ -509,7 +509,7 @@ void clearpixel(uint8_t *buff, uint8_t x, uint8_t y) {
 }
 
 // function to write a string on the lcd
-void drawstring(uint8_t *buff, uint8_t x, uint8_t line, uint8_t *c) {
+void drawstring(uint8_t *buff, uint8_t x, uint8_t line, char *c) {
 	int i = 0;
 	while (*c != '\0') {
 		drawchar(buff, x + i*6, line, *c);
