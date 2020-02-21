@@ -520,21 +520,21 @@ void drawstring(uint8_t *buff, uint8_t x, uint8_t line, uint8_t *c) {
 
 // use bresenham's algorithm to write this function to draw a line
 void drawline(uint8_t *buff,uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1,uint8_t color) {
-	float dx = x1 - x0 + 0.0;
-	float dy = y1 - y0 + 0.0;
-	float derr =  (float)abs(((float)dy)/((float)dx));
-	float err = 0.0;
+	double dx = x1 - x0 + 0.0;
+	double dy = y1 - y0 + 0.0;
+	double derr = fabs((double)dy/(double)dx);
+	double err = 0.0;
 	if (dx == 0) {
 		uint8_t x = x0;
 		for (uint8_t y = y0; y <= y1; y++) {
 			setpixel(buff, x, y, color);
 		}
-		} else if (dy == 0) {
+	} else if (dy == 0) {
 		uint8_t y = y0;
 		for (uint8_t x = x0; x <= x1; x++) {
 			setpixel(buff, x, y, color);
 		}
-		} else {
+	} else {
 		uint8_t y = y0;
 		for(uint8_t x = x0; x <= x1; x++) {
 			setpixel(buff, x, y, color);
