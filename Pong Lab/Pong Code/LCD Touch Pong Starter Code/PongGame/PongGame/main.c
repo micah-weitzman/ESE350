@@ -82,8 +82,8 @@ uint16_t readTouchY() {
 }
 
 // Define SCORES
-uint8_t score1 = 0; 
-uint8_t score2 = 0; 
+volatile char score1 = 2; 
+volatile char score2 = 4; 
 
 //Define paddle parameter variables
 uint8_t p1X = 3; 
@@ -138,9 +138,9 @@ void draw() {
 	// draw score
 	char s1[1]; 
 	char s2[1]; 
-	sprintf(s1, "%u", score1); 
-	sprintf(s2, "%u", score2); 
-	drawstring(buff, 53, 0, s1); 
+	sprintf(s1, "%i", score1); 
+	sprintf(s2, "%i", score2); 
+	drawstring(buff, 50, 0, s1); 
 	drawstring(buff, 69, 0, s2); 
 	
 	// draw paddles
@@ -162,7 +162,7 @@ void checkCollisions() {
 	// check if ball hit p2 paddle 
 	else if (ballX + ballR == p1X && ballY >= p2Y
 		&& ballY <= p2Y + p2L) {
-			ballDx = -1*ballDy; 
+			ballDx = -1*ballDx; 
 		}
 	
 	// check if ball hit upper wall 
@@ -171,8 +171,10 @@ void checkCollisions() {
 	}
 	
 	// check if ball hit lower wall 
-	else if (ballY + ballR == 127) {
-		ballDy = -1 * ballDy; 
+	if (ballY + ballR >= 63) {
+		ballDy = -1*ballDy; 
+		//ballX = 64; 
+		//ballY = 20; 
 	}
 }
 
@@ -198,13 +200,14 @@ int main(void)
 	_delay_ms(1000);
 	clear_buffer(buff);
 	
-	ballDx = rand() % 4 + 1;
-	ballDy = rand() % 4 + 1;
+	ballDx = rand() % 4 + 1 - rand() % 4;
+	ballDy = rand() % 4 + 1 - rand()% 4;
 	draw(); 
 	while (1)
 	{
-		//update(); 
+		update();
+		checkCollisions();
 		draw();
-		_delay_ms(50);  
+		_delay_ms(50);
 	}
 }
