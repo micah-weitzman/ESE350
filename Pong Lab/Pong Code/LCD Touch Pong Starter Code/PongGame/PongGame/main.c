@@ -180,7 +180,7 @@ void checkInput() {
 		} else if (a < 300 && !(p1Y + p1L >= 63)) {
 			p1Y += 3;
 		}
-		p2Y = fmax(1, ballY - p2L / 2); 
+		p2Y = ballY - p2L / 2; 
 	}
 }
 
